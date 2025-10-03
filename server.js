@@ -1,18 +1,22 @@
 const express = require('express');
+const authRoutes = require('./routes/auth');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
 
-// In-memory task storage
+// Auth routes
+app.use('/api/auth', authRoutes);
+
+// Task Management - In-memory storage
 let tasks = [];
 let nextId = 1;
 
-// Helper function to find task by ID
+// Helper functions
 const findTaskById = (id) => tasks.find(task => task.id === parseInt(id));
 
-// Helper function to validate task data
 const validateTask = (data) => {
   const errors = [];
 
@@ -35,11 +39,12 @@ const validateTask = (data) => {
   return errors;
 };
 
+// Task Routes
+
 // CREATE - POST /api/tasks
 app.post('/api/tasks', (req, res) => {
   const { title, description, status, priority } = req.body;
 
-  // Validation
   if (!title) {
     return res.status(400).json({ error: 'Title is required' });
   }
@@ -127,6 +132,18 @@ app.delete('/api/tasks/:id', (req, res) => {
   res.status(204).send();
 });
 
+// Health check
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    features: ['authentication', 'tasks'],
+    endpoints: {
+      auth: ['/api/auth/register', '/api/auth/login'],
+      tasks: ['/api/tasks', '/api/tasks/:id']
+    }
+  });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -135,7 +152,9 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Task API server running on port ${PORT}`);
+  console.log(`🚀 Combined server running on port ${PORT}`);
+  console.log('✅ Features: Authentication + Task Management');
+  console.log('📍 Health check: http://localhost:' + PORT + '/health');
 });
 
 module.exports = app;
